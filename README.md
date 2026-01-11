@@ -1,6 +1,12 @@
-# Growtopia Login Backend
+<h1 align="center">Growtopia Login Backend</h1>
 
-A backend service for Growtopia login system built with ElysiaJS and Bun runtime.
+<p align="center">
+  A Growtopia Login System Dashboard.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/GTVersion-v5.40-green" alt="GTVersion: v5.40">
+</p>
 
 ## Hosting Usage
 
@@ -13,7 +19,8 @@ Tutorial:
 - `GET /` - Returns a greeting message
 - `ALL /player/login/dashboard` - Serves the login dashboard HTML page
 - `POST /player/growid/login/validate` - Validates GrowID login credentials
-- `POST /player/growid/checktoken` - Validates and refreshes authentication token
+- `POST /player/growid/checktoken` - Redirects to `/player/growid/validate/checktoken` with refresh token and client data
+- `POST /player/growid/validate/checktoken` - Validates token and returns updated token
 
 ## How It Works
 
@@ -76,28 +83,28 @@ _token=eyJ0YW5rSUROYW1lIjoiYWtpbyIs...&growId=UserName&password=UserPass
 
 ### 4. Token Refresh
 
-Endpoint `/player/growid/checktoken` handles token refresh requests:
+Endpoint `/player/growid/checktoken` redirects the client to `/player/growid/validate/checktoken` with the refresh token and client data.
 
-**Request:**
-```json
-{
-  "data": {
-    "refreshToken": "<base64_token>",
-    "clientData": "<new_client_data>"
-  }
-}
+The client sends a POST request to `/player/growid/validate/checktoken` with the refresh token and client data:
+
+```txt
+refreshToken=<base64_encoded_refresh_token>
+clientData=<base64_encoded_client_data>
 ```
 
-**Response:**
+Then responds with:
+
 ```json
 {
   "status": "success",
   "message": "Token is valid.",
-  "token": "<updated_base64_token>",
+  "token": "<base64_encoded_credentials>",
   "url": "",
   "accountType": "growtopia"
 }
 ```
+
+**Note:** This implementation always validates successfully as it doesn't connect to a database. You should implement proper credential validation against your server database.
 
 ## Installation
 
