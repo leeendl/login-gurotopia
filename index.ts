@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import fs from 'fs';
 
 const app = express();
 const PORT = 3000;
@@ -35,7 +36,9 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
     req.socket.remoteAddress ||
     'unknown';
 
-  console.log(`[REQ] ${req.method} ${req.path} → ${clientIp} | ${_res.statusCode}`);
+  console.log(
+    `[REQ] ${req.method} ${req.path} → ${clientIp} | ${_res.statusCode}`,
+  );
   next();
 });
 
@@ -79,13 +82,11 @@ app.all('/player/login/dashboard', async (req: Request, res: Response) => {
   // @note read dashboard template and replace placeholder
   const templatePath = path.join(
     process.cwd(),
-    'src',
     'template',
     'dashboard.html',
   );
 
-  const templateFile = Bun.file(templatePath);
-  const templateContent = await templateFile.text();
+  const templateContent = fs.readFileSync(templatePath, 'utf-8');
   const htmlContent = templateContent.replace('{{ data }}', tDataBase64);
 
   res.setHeader('Content-Type', 'text/html');
@@ -151,8 +152,10 @@ app.all(
         | { data: { refreshToken: string; clientData: string } }
         | { refreshToken: string; clientData: string };
 
-      const refreshToken = 'data' in body ? body.data?.refreshToken : body.refreshToken;
-      const clientData = 'data' in body ? body.data?.clientData : body.clientData;
+      const refreshToken =
+        'data' in body ? body.data?.refreshToken : body.refreshToken;
+      const clientData =
+        'data' in body ? body.data?.clientData : body.clientData;
 
       if (!refreshToken || !clientData) {
         res.status(400).json({
