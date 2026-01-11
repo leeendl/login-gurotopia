@@ -7,13 +7,13 @@
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
-    "@elysiajs/cors": "^1.4.0",
-    "@elysiajs/static": "^1.4.7",
-    "elysia": "latest",
-    "elysia-ip": "^1.0.10",
-    "elysia-rate-limit": "^4.4.2"
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "bun-types": "latest",
     "typescript": "^5.9.3"
   }
