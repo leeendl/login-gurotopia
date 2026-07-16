@@ -1,15 +1,18 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "./index.ts",
-      "use": "@vercel/node"
+  "buildCommand": "npm install",
+  "outputDirectory": ".",
+  "framework": null,
+  "functions": {
+    "index.ts": {
+      "runtime": "nodejs20.x",
+      "includeFiles": "template/**"
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/"
+      "source": "/(.*)",
+      "destination": "/index.ts"
     }
   ]
 }

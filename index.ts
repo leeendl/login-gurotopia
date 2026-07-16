@@ -3,7 +3,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
-import { SQL } from 'bun';
+import mysql from 'mysql2/promise';
 
 const app = express();
 const PORT = 3000;
@@ -11,8 +11,29 @@ const PORT = 3000;
 const MAX_ATTEMPTS = 5;
 const COOLDOWN_MS = 30 * 60 * 1000;
 
-const dbUrl = process.env.DATABASE_URL || 'mysql://root:password@localhost:3306/growtopia';
-const db = new SQL(dbUrl);
+const dbConfig = process.env.DATABASE_URL || 'mysql://root:password@localhost:3306/growtopia';
+
+function parseDbUrl(url: string) {
+  const u = new URL(url);
+  return {
+    host: u.hostname,
+    port: u.port ? Number(u.port) : 3306,
+    user: decodeURIComponent(u.username),
+    password: decodeURIComponent(u.password),
+    database: u.pathname.replace(/^\//, ''),
+  };
+}
+
+const dbPool = mysql.createPool(parseDbConfig(dbConfig));
+
+function parseDbConfig(url: string) {
+  return parseDbUrl(url);
+}
+
+async function query<T = any>(sql: string, params: any[] = []): Promise<T[]> {
+  const [rows] = await dbPool.execute(sql, params);
+  return rows as T[];
+}
 
 const ipAttempts = new Map<string, { count: number; blockedUntil: number }>();
 
@@ -178,12 +199,12 @@ app.all(
         return;
       }
 
-      const rows = await db`SELECT * FROM peer WHERE growid = ${growId} LIMIT 1`;
+      const rows = await query<any>('SELECT * FROM peer WHERE growid = ? LIMIT 1', [growId]);
 
       if (rows.length === 0) {
         const attemptsLeft = recordFailedAttempt(clientIp);
         // generate error HTML directly
-        const clientData = btoa(`${growId}`);
+        const clientData = Buffer.from(`${growId}`).toString("base64");
         const errorMessage = `Account credentials missmatched. You have ${attemptsLeft} attempt(s) left.`;
         const templatePath = path.join(process.cwd(), 'template', 'dashboard.html');
         const templateContent = fs.readFileSync(templatePath, 'utf-8');
@@ -199,7 +220,7 @@ app.all(
       if (user.password !== password) {
         const attemptsLeft = recordFailedAttempt(clientIp);
         // generate error HTML directly
-        const clientData = btoa(`${growId}`);
+        const clientData = Buffer.from(`${growId}`).toString("base64");
         const errorMessage = `Account credentials missmatched. You have ${attemptsLeft} attempt(s) left.`;
         const templatePath = path.join(process.cwd(), 'template', 'dashboard.html');
         const templateContent = fs.readFileSync(templatePath, 'utf-8');
@@ -358,8 +379,10 @@ app.all(
   },
 );
 
-app.listen(PORT, () => {
-  console.log(`[SERVER] Running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`[SERVER] Running on http://localhost:${PORT}`);
+  });
+}
 
 export default app;
